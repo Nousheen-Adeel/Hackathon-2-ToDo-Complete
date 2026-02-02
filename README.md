@@ -10,8 +10,8 @@
 - [Phase 1: Console CLI App](#-phase-1-console-cli-app)
 - [Phase 2: REST API](#-phase-2-rest-api)
 - [Phase 3: Database Integration](#-phase-3-database-integration)
-- [Phase 4: Frontend UI](#-phase-4-frontend-ui)
-- [Phase 5: Authentication & AI Agents](#-phase-5-authentication--ai-agents)
+- [Phase 4: Frontend UI + Kubernetes](#-phase-4-frontend-ui--kubernetes)
+- [Phase 5: Auth & AI + Cloud Deployment](#-phase-5-auth--ai--cloud-deployment)
 - [Tech Stack](#-tech-stack)
 - [Author](#-author)
 
@@ -19,13 +19,13 @@
 
 ## 🌟 Overview
 
-| Phase | Name | Description |
-|:-----:|------|-------------|
-| 1️⃣ | Console CLI | Python command-line todo app |
-| 2️⃣ | REST API | FastAPI web endpoints |
-| 3️⃣ | Database | PostgreSQL persistent storage |
-| 4️⃣ | Frontend | Next.js beautiful UI |
-| 5️⃣ | Auth & AI | JWT login + AI chat agent |
+| Phase | Name | Description | Deployment |
+|:-----:|------|-------------|------------|
+| 1️⃣ | Console CLI | Python command-line todo app | Local |
+| 2️⃣ | REST API | FastAPI web endpoints | Local |
+| 3️⃣ | Database | PostgreSQL persistent storage | Docker |
+| 4️⃣ | Frontend | Next.js beautiful UI | **Minikube/Kubernetes** |
+| 5️⃣ | Auth & AI | JWT login + AI chat agent | **Vercel + Hugging Face** |
 
 ---
 
@@ -71,7 +71,7 @@ Simple command-line Todo application with **in-memory storage**. Users can manag
 
 ## ▶️ How to Run Phase 1
 
-```bash
+```powershell
 # Step 1: Go to project folder
 cd hackathon-2
 
@@ -94,20 +94,11 @@ python -m src.cli
 ## 💻 CLI Commands
 
 ```bash
-# Add a new task
-add "Buy groceries" "Milk, eggs, bread"
-
-# List all tasks
-list
-
-# Update a task
-update 1 "Buy groceries" "Milk, eggs, bread, butter"
-
-# Toggle task status
-toggle 1
-
-# Delete a task
-delete 1
+add "Buy groceries" "Milk, eggs, bread"    # Add task
+list                                        # List all tasks
+update 1 "Buy groceries" "Updated desc"    # Update task
+toggle 1                                    # Toggle status
+delete 1                                    # Delete task
 ```
 
 ---
@@ -138,13 +129,16 @@ Convert CLI app to **REST API** using FastAPI. Now tasks can be managed via HTTP
 
 ## ▶️ How to Run Phase 2
 
-```bash
+```powershell
 # Step 1: Activate virtual environment
 .\venv\Scripts\Activate.ps1    # Windows
 source venv/bin/activate       # Linux/Mac
 
 # Step 2: Run FastAPI server
 uvicorn src.api:app --reload --port 8000
+
+# Step 3: Open Swagger UI
+# http://localhost:8000/docs
 ```
 
 ## 🔗 API Endpoints
@@ -158,21 +152,14 @@ uvicorn src.api:app --reload --port 8000
 | `DELETE` | `/tasks/{id}` | 🗑️ Delete task |
 | `PATCH` | `/tasks/{id}/toggle` | ✅ Toggle status |
 
-## 🧪 Test API
+## 🧪 Test API with cURL
 
-```bash
-# Open browser for Swagger UI
-http://localhost:8000/docs
-
-# Or use curl commands:
-
+```powershell
 # Get all tasks
 curl http://localhost:8000/tasks
 
 # Create task
-curl -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Learn FastAPI", "description": "Complete tutorial"}'
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d '{"title": "Learn FastAPI", "description": "Complete tutorial"}'
 
 # Toggle task
 curl -X PATCH http://localhost:8000/tasks/1/toggle
@@ -193,7 +180,7 @@ Replace in-memory storage with **PostgreSQL database** using SQLAlchemy ORM for 
 | 🗄️ PostgreSQL | Relational database |
 | 🔗 SQLAlchemy | Python ORM |
 | 💾 Persistence | Data survives restarts |
-| 🔄 Migrations | Database schema management |
+| 🐳 Docker | Containerized database |
 
 ## 📂 Files
 
@@ -207,15 +194,9 @@ Replace in-memory storage with **PostgreSQL database** using SQLAlchemy ORM for 
 
 ## ▶️ How to Run Phase 3
 
-```bash
-# Step 1: Start PostgreSQL (using Docker)
-docker run -d \
-  --name todo-postgres \
-  -e POSTGRES_DB=todo_db \
-  -e POSTGRES_USER=todo_user \
-  -e POSTGRES_PASSWORD=todo_password \
-  -p 5432:5432 \
-  postgres:15
+```powershell
+# Step 1: Start PostgreSQL with Docker
+docker run -d --name todo-postgres -e POSTGRES_DB=todo_db -e POSTGRES_USER=todo_user -e POSTGRES_PASSWORD=todo_password -p 5432:5432 postgres:15
 
 # Step 2: Set environment variable
 # Windows PowerShell:
@@ -226,6 +207,9 @@ export DATABASE_URL="postgresql://todo_user:todo_password@localhost:5432/todo_db
 
 # Step 3: Run FastAPI server
 uvicorn src.api:app --reload --port 8000
+
+# Step 4: Test database
+# http://localhost:8000/docs
 ```
 
 ## 🗄️ Database Schema
@@ -241,11 +225,11 @@ CREATE TABLE tasks (
 
 ---
 
-# 4️⃣ Phase 4: Frontend UI
+# 4️⃣ Phase 4: Frontend UI + Kubernetes
 
 ## 📝 Description
 
-Beautiful **Next.js frontend** with Tailwind CSS. Modern, responsive UI for task management!
+Beautiful **Next.js frontend** with Tailwind CSS + **Kubernetes deployment** with Minikube!
 
 ## ✨ Features
 
@@ -254,87 +238,180 @@ Beautiful **Next.js frontend** with Tailwind CSS. Modern, responsive UI for task
 | 🎨 Modern UI | Clean white theme |
 | 📱 Responsive | Works on all devices |
 | ⚡ Real-time | Instant updates |
-| 🎯 User-friendly | Easy to use interface |
+| ☸️ Kubernetes | Container orchestration |
 
 ## 📂 Files
 
 ```
-📂 hackathon-todo-phase4/frontend/
-├── 📂 src/
-│   ├── 📂 app/
-│   │   ├── 📄 page.tsx           # Home page
-│   │   ├── 📄 layout.tsx         # App layout
-│   │   ├── 📂 login/             # Login page
-│   │   └── 📂 register/          # Register page
-│   ├── 📂 components/
-│   │   ├── 📄 AddTask.tsx        # Add task form
-│   │   └── 📄 TaskCard.tsx       # Task display card
-│   └── 📂 context/
-│       └── 📄 AuthContext.tsx    # Auth state management
-├── 📄 package.json
-└── 📄 tailwind.config.js
+📂 hackathon-todo-phase4/
+├── 📂 frontend/          # Next.js app
+├── 📂 backend/           # FastAPI backend
+├── 📂 k8s/               # Kubernetes manifests
+└── 📄 docker-compose.yml # Docker setup
+
+📂 k8s-manifests/         # Production K8s configs
+├── 📄 namespace.yaml
+├── 📄 postgres.yaml
+├── 📄 backend.yaml
+├── 📄 frontend.yaml
+├── 📄 ai-agent.yaml
+└── 📄 deploy.sh
 ```
 
-## ▶️ How to Run Phase 4
+---
 
-### Option A: Run Frontend Only
+## ▶️ Option A: Run with Docker Compose (Easy)
 
-```bash
-# Step 1: Go to frontend folder
-cd hackathon-todo-phase4/frontend
-
-# Step 2: Install dependencies
-npm install
-
-# Step 3: Run development server
-npm run dev
-
-# Step 4: Open browser
-http://localhost:3000
-```
-
-### Option B: Run Full Stack with Docker 🐳
-
-```bash
+```powershell
 # Step 1: Go to phase 4 folder
 cd hackathon-todo-phase4
 
 # Step 2: Start all services
-docker-compose up -d
+docker-compose up -d --build
 
 # Step 3: Access applications
-# Frontend:  http://localhost:3000
-# Backend:   http://localhost:8000
-# AI Agent:  http://localhost:8001
+# 🌐 Frontend: http://localhost:3000
+# 🔌 Backend:  http://localhost:8000
+# 🤖 AI Agent: http://localhost:8001
+
+# Stop services
+docker-compose down
 ```
-
-## 🖼️ UI Components
-
-| Component | Description |
-|-----------|-------------|
-| 📝 Task Form | Add new tasks |
-| 📋 Task List | View all tasks |
-| ✅ Checkbox | Toggle completion |
-| 🗑️ Delete Button | Remove tasks |
-| 🔍 Filter | Show all/pending/completed |
 
 ---
 
-# 5️⃣ Phase 5: Authentication & AI Agents
+## ☸️ Option B: Deploy with Minikube & Kubernetes
+
+### 📋 Prerequisites
+
+```powershell
+# Install Minikube (Windows - using Chocolatey)
+choco install minikube
+
+# OR download from: https://minikube.sigs.k8s.io/docs/start/
+
+# Install kubectl
+choco install kubernetes-cli
+
+# Verify installations
+minikube version
+kubectl version --client
+```
+
+### 🚀 Step-by-Step Kubernetes Deployment
+
+```powershell
+# Step 1: Start Minikube
+minikube start --driver=docker --memory=4096 --cpus=2
+
+# Step 2: Enable addons
+minikube addons enable ingress
+minikube addons enable metrics-server
+
+# Step 3: Set Docker to use Minikube's Docker daemon
+# PowerShell:
+& minikube -p minikube docker-env --shell powershell | Invoke-Expression
+
+# Bash:
+eval $(minikube docker-env)
+
+# Step 4: Go to k8s manifests folder
+cd k8s-manifests
+
+# Step 5: Create namespace
+kubectl apply -f namespace.yaml
+
+# Step 6: Deploy PostgreSQL
+kubectl apply -f pv-pvc.yaml
+kubectl apply -f postgres.yaml
+
+# Step 7: Wait for PostgreSQL to be ready
+kubectl wait --for=condition=ready pod -l app=postgres -n todo-app --timeout=120s
+
+# Step 8: Deploy Backend
+kubectl apply -f backend.yaml
+
+# Step 9: Deploy Frontend
+kubectl apply -f frontend.yaml
+
+# Step 10: Deploy AI Agent
+kubectl apply -f ai-agent.yaml
+
+# Step 11: Check all pods are running
+kubectl get pods -n todo-app
+
+# Step 12: Get service URLs
+minikube service list -n todo-app
+```
+
+### 🔗 Access Application on Minikube
+
+```powershell
+# Get Frontend URL
+minikube service todo-frontend -n todo-app --url
+
+# Get Backend URL
+minikube service todo-backend -n todo-app --url
+
+# Get AI Agent URL
+minikube service todo-ai-agent -n todo-app --url
+
+# OR open directly in browser
+minikube service todo-frontend -n todo-app
+```
+
+### 📊 Kubernetes Commands Cheatsheet
+
+```powershell
+# View all resources
+kubectl get all -n todo-app
+
+# View pods
+kubectl get pods -n todo-app
+
+# View logs
+kubectl logs -f deployment/todo-backend -n todo-app
+kubectl logs -f deployment/todo-frontend -n todo-app
+
+# Describe pod (for debugging)
+kubectl describe pod <pod-name> -n todo-app
+
+# Scale deployment
+kubectl scale deployment todo-backend --replicas=3 -n todo-app
+
+# Delete all resources
+kubectl delete namespace todo-app
+
+# Stop Minikube
+minikube stop
+
+# Delete Minikube cluster
+minikube delete
+```
+
+### 🔧 Minikube Dashboard
+
+```powershell
+# Open Kubernetes Dashboard
+minikube dashboard
+```
+
+---
+
+# 5️⃣ Phase 5: Auth & AI + Cloud Deployment
 
 ## 📝 Description
 
-Enterprise features: **JWT Authentication** for secure login and **AI-powered chat agent** using MCP SDK!
+Enterprise features: **JWT Authentication** + **AI Agent** with deployments to **Vercel** (Frontend) and **Hugging Face Spaces** (Backend/AI)!
 
 ## ✨ Features
 
 | Feature | Description |
 |---------|-------------|
 | 🔐 JWT Auth | Secure token-based login |
-| 👤 User Registration | Create new accounts |
 | 🤖 AI Agent | Natural language task management |
-| 🧠 MCP SDK | Model Context Protocol integration |
-| 💬 Chat Interface | Talk to AI for tasks |
+| 🚀 Vercel | Frontend cloud deployment |
+| 🤗 Hugging Face | Backend/AI deployment |
 
 ## 📂 Files
 
@@ -343,52 +420,19 @@ Enterprise features: **JWT Authentication** for secure login and **AI-powered ch
 ├── 📂 backend/
 │   ├── 📄 main.py              # FastAPI with all routes
 │   ├── 📄 auth.py              # JWT authentication
-│   └── 📄 chat_persistence.py  # Chat history storage
+│   └── 📄 requirements.txt
+│
+├── 📂 frontend/
+│   ├── 📄 package.json
+│   └── 📂 src/
 │
 └── 📂 ai-agent/
     ├── 📄 main.py              # AI agent server
-    ├── 📄 mcp_sdk.py           # MCP SDK implementation
-    ├── 📄 skills.py            # Task management skills
-    └── 📄 subagents.py         # Sub-agent orchestration
+    ├── 📄 mcp_sdk.py           # MCP SDK
+    └── 📄 requirements.txt
 ```
 
-## ▶️ How to Run Phase 5
-
-### Full Stack with Docker (Recommended) 🐳
-
-```bash
-# Step 1: Go to phase 4 folder
-cd hackathon-todo-phase4
-
-# Step 2: Create .env file
-echo "OPENAI_API_KEY=your-api-key-here" > .env
-
-# Step 3: Start all services
-docker-compose up -d
-
-# Step 4: Access applications
-# Frontend:  http://localhost:3000
-# Backend:   http://localhost:8000
-# AI Agent:  http://localhost:8001
-```
-
-### Run Services Separately
-
-```bash
-# Terminal 1: Backend
-cd hackathon-todo-phase4/backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-
-# Terminal 2: Frontend
-cd hackathon-todo-phase4/frontend
-npm install && npm run dev
-
-# Terminal 3: AI Agent
-cd hackathon-todo-phase4/ai-agent
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8001
-```
+---
 
 ## 🔐 Authentication Endpoints
 
@@ -399,42 +443,238 @@ uvicorn main:app --reload --port 8001
 | `POST` | `/auth/refresh` | 🔄 Refresh access token |
 | `GET` | `/auth/me` | 👤 Get current user |
 
-## 🧪 Auth API Examples
+---
 
-```bash
-# Register new user
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "mypassword"}'
+## 🚀 Deploy Frontend to Vercel
 
-# Login
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "mypassword"}'
+### 📋 Prerequisites
+- Vercel account: https://vercel.com/signup
+- GitHub repository connected
 
-# Access protected route (use token from login)
-curl http://localhost:8000/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+### Step-by-Step Vercel Deployment
+
+```powershell
+# Step 1: Install Vercel CLI
+npm install -g vercel
+
+# Step 2: Go to frontend folder
+cd hackathon-todo-phase4/frontend
+
+# Step 3: Login to Vercel
+vercel login
+
+# Step 4: Create .env.local for production
+echo "NEXT_PUBLIC_API_URL=https://your-backend-url.hf.space" > .env.local
+
+# Step 5: Deploy to Vercel
+vercel
+
+# Step 6: Follow prompts:
+# ? Set up and deploy? Yes
+# ? Which scope? Select your account
+# ? Link to existing project? No
+# ? Project name? todo-evolution-frontend
+# ? Directory? ./
+# ? Override settings? No
+
+# Step 7: Deploy to production
+vercel --prod
+
+# 🎉 Your frontend is live at: https://todo-evolution-frontend.vercel.app
 ```
 
-## 🤖 MCP SDK Endpoints
+### Vercel Environment Variables (Dashboard)
 
-| Method | Endpoint | Description |
-|:------:|----------|-------------|
-| `GET` | `/mcp/capabilities` | 📋 Server capabilities |
-| `GET` | `/mcp/tools/list` | 🛠️ List available tools |
-| `POST` | `/mcp/tools/call` | ⚡ Execute a tool |
+Go to: **Vercel Dashboard → Project → Settings → Environment Variables**
 
-## 🛠️ Available AI Skills
+```
+NEXT_PUBLIC_API_URL = https://your-backend.hf.space
+NEXT_PUBLIC_AI_AGENT_URL = https://your-ai-agent.hf.space
+```
 
-| Skill | Trigger Words | Description |
-|-------|---------------|-------------|
-| `task_creation` | "add task", "create task" | ➕ Creates new tasks |
-| `task_listing` | "list tasks", "show tasks" | 📋 Shows all tasks |
-| `task_completion` | "complete task", "finish" | ✅ Marks task done |
-| `task_deletion` | "delete task", "remove" | 🗑️ Deletes tasks |
+---
 
-## 💬 Chat with AI Example
+## 🤗 Deploy Backend to Hugging Face Spaces
+
+### 📋 Prerequisites
+- Hugging Face account: https://huggingface.co/join
+- Create new Space: https://huggingface.co/new-space
+
+### Step 1: Create Hugging Face Space
+
+1. Go to https://huggingface.co/new-space
+2. **Space name**: `todo-backend`
+3. **License**: MIT
+4. **Select SDK**: Docker
+5. **Hardware**: CPU Basic (Free)
+6. Click **Create Space**
+
+### Step 2: Create Dockerfile for Backend
+
+Create `Dockerfile` in `hackathon-todo-phase4/backend/`:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 7860
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+```
+
+### Step 3: Push to Hugging Face
+
+```powershell
+# Step 1: Install Git LFS (if not installed)
+git lfs install
+
+# Step 2: Clone your HF Space
+git clone https://huggingface.co/spaces/YOUR_USERNAME/todo-backend
+cd todo-backend
+
+# Step 3: Copy backend files
+cp -r ../hackathon-todo-phase4/backend/* .
+
+# Step 4: Create README.md for HF Space
+@"
+---
+title: Todo Backend API
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
+# Todo Backend API
+FastAPI backend for Todo Evolution app.
+"@ | Out-File -FilePath README.md -Encoding utf8
+
+# Step 5: Add and push
+git add .
+git commit -m "Deploy todo backend"
+git push
+
+# 🎉 Backend live at: https://YOUR_USERNAME-todo-backend.hf.space
+```
+
+### Step 4: Set Hugging Face Secrets
+
+Go to: **Space Settings → Variables and secrets**
+
+```
+DATABASE_URL = your-neon-db-url
+JWT_SECRET_KEY = your-secret-key
+```
+
+---
+
+## 🤗 Deploy AI Agent to Hugging Face Spaces
+
+### Step 1: Create Another Space
+
+1. Go to https://huggingface.co/new-space
+2. **Space name**: `todo-ai-agent`
+3. **SDK**: Docker
+4. Click **Create Space**
+
+### Step 2: Create Dockerfile for AI Agent
+
+Create `Dockerfile` in `hackathon-todo-phase4/ai-agent/`:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 7860
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+```
+
+### Step 3: Push AI Agent to HF
+
+```powershell
+# Clone HF Space
+git clone https://huggingface.co/spaces/YOUR_USERNAME/todo-ai-agent
+cd todo-ai-agent
+
+# Copy ai-agent files
+cp -r ../hackathon-todo-phase4/ai-agent/* .
+
+# Create README
+@"
+---
+title: Todo AI Agent
+emoji: 🤖
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
+# Todo AI Agent
+MCP SDK powered AI agent for Todo app.
+"@ | Out-File -FilePath README.md -Encoding utf8
+
+# Push
+git add .
+git commit -m "Deploy AI agent"
+git push
+
+# 🎉 AI Agent live at: https://YOUR_USERNAME-todo-ai-agent.hf.space
+```
+
+### Step 4: Set AI Agent Secrets
+
+Go to: **Space Settings → Variables and secrets**
+
+```
+OPENAI_API_KEY = your-openai-api-key
+TODO_BACKEND_URL = https://YOUR_USERNAME-todo-backend.hf.space
+```
+
+---
+
+## 🌐 Live Deployment Links (After Deployment)
+
+| Service | Platform | URL |
+|---------|----------|-----|
+| 🌐 Frontend | Vercel | `https://todo-evolution.vercel.app` |
+| 🔌 Backend | Hugging Face | `https://username-todo-backend.hf.space` |
+| 🤖 AI Agent | Hugging Face | `https://username-todo-ai-agent.hf.space` |
+
+---
+
+## 🔗 Connect All Services
+
+### Update Frontend Environment (Vercel)
+
+```
+NEXT_PUBLIC_API_URL = https://username-todo-backend.hf.space
+NEXT_PUBLIC_AI_AGENT_URL = https://username-todo-ai-agent.hf.space
+```
+
+### Update AI Agent Environment (Hugging Face)
+
+```
+TODO_BACKEND_URL = https://username-todo-backend.hf.space
+```
+
+---
+
+## 💬 Test AI Chat
 
 ```
 You: "Add a task to buy groceries"
@@ -461,7 +701,6 @@ AI: "✅ Task 'Buy groceries' marked as complete!"
 | 🗄️ PostgreSQL | Database |
 | 🔗 SQLAlchemy | ORM |
 | 🔐 JWT | Authentication |
-| 📊 Pydantic | Data validation |
 
 ## Frontend
 | Technology | Purpose |
@@ -481,13 +720,14 @@ AI: "✅ Task 'Buy groceries' marked as complete!"
 |------------|---------|
 | 🐳 Docker | Containerization |
 | ☸️ Kubernetes | Orchestration |
-| 📦 Docker Compose | Local development |
+| 🚀 Vercel | Frontend hosting |
+| 🤗 Hugging Face | Backend hosting |
 
 ---
 
 # ⚙️ Environment Variables
 
-Create a `.env` file:
+## Local Development (.env)
 
 ```env
 # Database
@@ -500,11 +740,26 @@ JWT_SECRET_KEY=your-super-secret-key-here
 OPENAI_API_KEY=your-openai-api-key-here
 ```
 
+## Production (Vercel)
+
+```env
+NEXT_PUBLIC_API_URL=https://username-todo-backend.hf.space
+NEXT_PUBLIC_AI_AGENT_URL=https://username-todo-ai-agent.hf.space
+```
+
+## Production (Hugging Face)
+
+```env
+DATABASE_URL=your-neon-db-url
+JWT_SECRET_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-key
+```
+
 ---
 
 # 🧪 Running Tests
 
-```bash
+```powershell
 # Run all tests
 pytest tests/ -v
 
@@ -517,22 +772,15 @@ pytest tests/ --cov=src
 
 ---
 
-# 🚀 Quick Start (All Phases)
+# 🚀 Quick Start Summary
 
-```bash
-# Clone repository
-git clone https://github.com/Nousheen-Adeel/Hackathon-2-ToDo-Complete.git
-cd Hackathon-2-ToDo-Complete
-
-# Run with Docker (easiest!)
-cd hackathon-todo-phase4
-docker-compose up -d
-
-# Access:
-# 🌐 Frontend: http://localhost:3000
-# 🔌 Backend:  http://localhost:8000
-# 🤖 AI Agent: http://localhost:8001
-```
+| Phase | Command |
+|-------|---------|
+| **Phase 1** | `python -m src.cli` |
+| **Phase 2** | `uvicorn src.api:app --reload --port 8000` |
+| **Phase 3** | `docker run postgres` + `uvicorn` |
+| **Phase 4** | `docker-compose up -d` OR `minikube start` |
+| **Phase 5** | Deploy to **Vercel** + **Hugging Face** |
 
 ---
 
