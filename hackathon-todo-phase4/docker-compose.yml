@@ -1,0 +1,79 @@
+# docker-compose.yml for local testing of containerized services
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: todo_db
+      POSTGRES_USER: todo_user
+      POSTGRES_PASSWORD: todo_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo_user -d todo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  todo-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://todo_user:todo_password@postgres:5432/todo_db
+      - ENVIRONMENT=development
+      - LOG_LEVEL=info
+      - JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  todo-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://todo-backend:8000
+      - NEXT_PUBLIC_APP_NAME=Todo Evolution
+    depends_on:
+      - todo-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ai-agent:
+    build:
+      context: ./ai-agent
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - TODO_BACKEND_URL=http://todo-backend:8000
+      - MCP_SERVER_URL=http://ai-agent:8001
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key-here}
+      - CHAT_MODEL=gpt-4o-mini
+    depends_on:
+      - todo-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:

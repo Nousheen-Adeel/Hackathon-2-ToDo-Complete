@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend
+  namespace: todo-evolution
+  labels:
+    app: todo-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-frontend
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: todo-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_BACKEND_URL
+          value: "http://todo-backend:8000"
+        - name: NEXT_PUBLIC_APP_NAME
+          value: "Mission Control"
+        # Temporarily disabled probes for startup
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 3000
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 3000
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend
+  namespace: todo-evolution
+  labels:
+    app: todo-frontend
+spec:
+  selector:
+    app: todo-frontend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer

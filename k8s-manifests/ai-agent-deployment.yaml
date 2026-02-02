@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agent
+  namespace: todo-evolution
+  labels:
+    app: ai-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-agent
+  template:
+    metadata:
+      labels:
+        app: ai-agent
+    spec:
+      containers:
+      - name: ai-agent
+        image: ai-agent-phase23:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8001
+        env:
+        - name: TODO_BACKEND_URL
+          value: "http://todo-backend:8000"
+        - name: TODO_FRONTEND_URL
+          value: "http://todo-frontend:3000"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: todo-secrets
+              key: openai-api-key
+        - name: CHAT_MODEL
+          value: "gpt-4o-mini"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-agent
+  namespace: todo-evolution
+  labels:
+    app: ai-agent
+spec:
+  selector:
+    app: ai-agent
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP

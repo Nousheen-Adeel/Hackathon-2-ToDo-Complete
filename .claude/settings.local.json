@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(curl:*)",
+      "Bash(git -C \"C:\\\\Users\\\\Dell\\\\hackathon-recordings\\\\hackathon-2\" log --oneline)",
+      "Bash(taskkill:*)",
+      "Bash(\"/c/Users/Dell/AppData/Local/Programs/Python/Python311/python.exe\" -m uvicorn:*)",
+      "Bash(npm run dev:*)",
+      "Bash(\"/c/Users/Dell/AppData/Local/Programs/Python/Python311/python.exe\" -m uvicorn main:app --host 0.0.0.0 --port 8000)",
+      "Bash(netstat:*)"
+    ]
+  }
+}

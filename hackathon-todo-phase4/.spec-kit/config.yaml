@@ -1,0 +1,37 @@
+# Spec-Kit Configuration for Todo Evolution - Phase 4
+# Cloud-Native Deployment with Kubernetes
+
+project:
+  name: "todo-evolution-phase4"
+  version: "4.0.0"
+  description: "Cloud-Native Deployment of Todo Evolution Application"
+  phases:
+    - phase1: "CLI Application"
+    - phase2: "Web API"
+    - phase3: "Database Integration"
+    - phase4: "Cloud-Native Deployment"
+
+specifications:
+  current_phase: "phase4-k8s"
+  base_path: "./specs"
+  file_extensions: [".md", ".yaml", ".yml"]
+  validation:
+    required_sections: ["overview", "requirements", "architecture", "implementation"]
+
+environments:
+  development: 
+    platform: "Minikube"
+    container_runtime: "Docker"
+    ingress_controller: "NGINX"
+  production:
+    platform: "Kubernetes"
+    container_runtime: "containerd"
+    ingress_controller: "NGINX"
+
+output:
+  format: "markdown"
+  validation: "strict"
+  artifacts:
+    - "k8s-manifests"
+    - "dockerfiles"
+    - "deployment-plans"

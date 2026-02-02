@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Evolution - Phase 2 & 3 UI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+        .card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .task-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input, textarea, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .task-completed {
+            text-decoration: line-through;
+            color: #95a5a6;
+        }
+        .ai-chat-container {
+            margin-top: 30px;
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+            margin-bottom: 15px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background: #e3f2fd;
+            text-align: right;
+        }
+        .bot-message {
+            background: #f1f8e9;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✨ Todo Evolution</h1>
+            <p class="subtitle">Cloud-Native Task Management System with AI Integration</p>
+        </header>
+
+        <div class="card">
+            <h2>➕ Add New Task</h2>
+            <form class="task-form" id="taskForm">
+                <input type="text" id="taskTitle" placeholder="Task title" required>
+                <textarea id="taskDescription" placeholder="Task description (optional)"></textarea>
+                <button type="submit">Add Task</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📋 Your Tasks</h2>
+            <div id="tasksList">
+                <p>Loading tasks...</p>
+            </div>
+        </div>
+
+        <div class="ai-chat-container card">
+            <h2>🤖 AI Assistant</h2>
+            <div id="chatMessages" class="chat-messages">
+                <div class="message bot-message">
+                    Hello! I'm your AI assistant. You can ask me to manage your tasks using natural language.<br>
+                    Try commands like:<br>
+                    • "add task Buy groceries"<br>
+                    • "list tasks"<br>
+                    • "complete task Buy groceries"<br>
+                    • "delete task Buy groceries"
+                </div>
+            </div>
+            <form class="chat-input" id="chatForm">
+                <input type="text" id="chatInput" placeholder="Ask me to manage your tasks...">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+
+        <div id="statusMessage" class="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Get the backend service URL from Minikube
+        const API_BASE = 'http://127.0.0.1:59970'; // This is the frontend service URL from Minikube
+        // Note: The actual backend API is at http://todo-backend:8000 inside the cluster
+        // For external access, you'll need to port-forward the backend service
+
+        // Load tasks on page load
+        document.addEventListener('DOMContentLoaded', loadTasks);
+
+        // Add task form submission
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, description, completed: false })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('taskTitle').value = '';
+                    document.getElementById('taskDescription').value = '';
+                    showStatus('Task added successfully!', 'success');
+                    loadTasks();
+                } else {
+                    const error = await response.json();
+                    showStatus(`Error: ${error.detail || 'Failed to add task'}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Chat form submission
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = document.getElementById('chatInput').value;
+            if (!query.trim()) return;
+            
+            // Add user message to chat
+            addMessage(query, 'user');
+            document.getElementById('chatInput').value = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query, tasks: [] })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addMessage(data.response, 'bot');
+                    
+                    // Refresh tasks if the command might have modified them
+                    if (query.toLowerCase().includes('add') || 
+                        query.toLowerCase().includes('delete') || 
+                        query.toLowerCase().includes('complete') ||
+                        query.toLowerCase().includes('update')) {
+                        loadTasks();
+                    }
+                } else {
+                    addMessage('Sorry, I encountered an error processing your request.', 'bot');
+                }
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'bot');
+            }
+        });
+
+        // Load tasks from backend
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                if (response.ok) {
+                    const tasks = await response.json();
+                    displayTasks(tasks);
+                } else {
+                    document.getElementById('tasksList').innerHTML = '<p>Error loading tasks</p>';
+                }
+            } catch (error) {
+                document.getElementById('tasksList').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+
+        // Display tasks in the UI
+        function displayTasks(tasks) {
+            const tasksList = document.getElementById('tasksList');
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<p>No tasks yet. Add your first task!</p>';
+                return;
+            }
+            
+            tasksList.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `task-item ${task.completed ? 'task-completed' : ''}`;
+                
+                taskElement.innerHTML = `
+                    <div>
+                        <strong>${task.title}</strong>
+                        ${task.description ? `<p>${task.description}</p>` : ''}
+                        <small>ID: ${task.id} | Created: ${new Date(task.created_at).toLocaleString()}</small>
+                    </div>
+                    <div>
+                        <button onclick="toggleTask('${task.id}')" class="small-btn">${task.completed ? 'Undo' : 'Complete'}</button>
+                        <button onclick="deleteTask('${task.id}')" class="small-btn" style="background: #e74c3c;">Delete</button>
+                    </div>
+                `;
+                
+                tasksList.appendChild(taskElement);
+            });
+        }
+
+        // Toggle task completion
+        async function toggleTask(taskId) {
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/toggle`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    loadTasks();
+                } else {
+                    showStatus('Error toggling task', 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Delete task
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadTasks();
+                    showStatus('Task deleted successfully', 'success');
+                } else {
+                    showStatus('Error deleting task', 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Make functions available globally for inline onclick handlers
+        window.toggleTask = toggleTask;
+        window.deleteTask = deleteTask;
+    </script>
+</body>
+</html>
